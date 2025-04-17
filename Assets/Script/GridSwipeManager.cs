@@ -21,11 +21,12 @@ public class GridSwipeManager : MonoBehaviour, IPointerDownHandler, IPointerUpHa
     public GridSlot[,] slots;
 
     public CheckWinCondition checkWinCondition;
-    private void Awake()
+    private void OnEnable()
     {
         Instance = this;
         slots = new GridSlot[rows, columns];
         checkWinCondition = gameObject.GetComponent<CheckWinCondition>();
+        checkWinCondition.onTimeChange += UIManager.Instance.UpdatecountDown;
     }
 
     public void RegisterSlot(int row, int col, GridSlot slot)
@@ -45,7 +46,10 @@ public class GridSwipeManager : MonoBehaviour, IPointerDownHandler, IPointerUpHa
     {
         endTouch = eventData.position;
         DetectSwipe();
-        Debug.Log(checkWinCondition.CheckWinningCodition());
+        if (checkWinCondition.CheckWinningCodition())
+        {
+            StartCoroutine(CountDownWinScreenAppear());
+        }
     }
 
     private void DetectSwipe()
@@ -127,5 +131,11 @@ public class GridSwipeManager : MonoBehaviour, IPointerDownHandler, IPointerUpHa
     private bool IsValid(int row, int col)
     {
         return row >= 0 && row < rows && col >= 0 && col < columns;
+    }
+    IEnumerator CountDownWinScreenAppear()
+    {
+        yield return new WaitForSeconds(0.5f);
+        UIManager.Instance.WinScreenActice();
+
     }
 }

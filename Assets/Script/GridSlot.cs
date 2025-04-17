@@ -11,8 +11,19 @@ public class GridSlot : MonoBehaviour
     [SerializeField] GameObject block;
     private void Start()
     {
+        if (orangePiece == null)
+        {
+            orangePiece = GetComponentInChildren<OrangeSlice>();
+        }
+        if (block == null)
+        {
+            Transform blockTransform = transform.Find("Block");
+            if (blockTransform != null)
+            {
+                block = blockTransform.gameObject;
+            }
+        }
         GridSwipeManager.Instance.RegisterSlot(x, y, this);
-        Debug.Log("Assigned");
     }
     public bool HasOrangePiece() => orangePiece != null;
     public void RemoveOrangePiece()
@@ -22,7 +33,7 @@ public class GridSlot : MonoBehaviour
 
     public void MovePieceTo(GridSlot targetSlot)
     {
-        if (orangePiece == null || targetSlot == null || targetSlot.block !=null || targetSlot.orangePiece != null) return;
+        if (orangePiece == null || targetSlot == null || targetSlot.block != null || targetSlot.orangePiece != null) return;
         targetSlot.orangePiece = orangePiece;
         orangePiece.transform.SetParent(targetSlot.transform);
         orangePiece.transform.DOMove(targetSlot.transform.position, 0.2f);

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -7,73 +8,49 @@ public class CheckWinCondition : MonoBehaviour
 {
     public GridSwipeManager gridSwipeManager;
     public bool isOutOfTime;
-    public static float  timeLimit = 45f;
-    void Start()
+    public static float timeLimit = 45f;
+    public event Action<float> onTimeChange;
+    void OnEnable()
     {
         gridSwipeManager = GridSwipeManager.Instance;
+        StartCoroutine(StartCoutDown());
     }
     IEnumerator StartCoutDown()
     {
-        yield return new WaitForSeconds(timeLimit);
-        isOutOfTime = true;
+        float time = timeLimit;
+        while (time >= 0)
+        {
+            yield return new WaitForSeconds(1f);
+            onTimeChange?.Invoke(time--);
+        }
+        UIManager.Instance.LoseScreenActice();
     }
     public bool CheckWinningCodition()
     {
-        for (int r = 0; r < gridSwipeManager.rows; r++)
+        for (int r = 0; r < gridSwipeManager.rows - 1; r++)
         {
-            for (int c = 0; c < gridSwipeManager.rows; c++)
+            for (int c = 0; c < gridSwipeManager.columns - 1; c++)
             {
-                GridSlot currentSlot = gridSwipeManager.slots[r, c];
+                GridSlot slot1 = gridSwipeManager.slots[r, c];
+                GridSlot slot2 = gridSwipeManager.slots[r, c + 1];
+                GridSlot slot3 = gridSwipeManager.slots[r + 1, c];
+                GridSlot slot4 = gridSwipeManager.slots[r + 1, c + 1];
 
-                if (currentSlot == null || !currentSlot.HasOrangePiece()) continue;
-                OrangeSlice currentSlice = currentSlot.GetOrangeSlice();
-                //Id =1
-                if (currentSlice.id == 1)
+                if (slot1 == null || slot2 == null || slot3 == null || slot4 == null) continue;
+                if (!slot1.HasOrangePiece() || !slot2.HasOrangePiece() || !slot3.HasOrangePiece() || !slot4.HasOrangePiece()) continue;
+
+                int id1 = slot1.GetOrangeSlice().id;
+                int id2 = slot2.GetOrangeSlice().id;
+                int id3 = slot3.GetOrangeSlice().id;
+                int id4 = slot4.GetOrangeSlice().id;
+
+                // Kiểm tra xem 4 mảnh có đúng vị trí không
+                if (id1 == 1 && id2 == 2 && id3 == 3 && id4 == 4)
                 {
-                    if (IsValid(r, c + 1) && gridSwipeManager.slots[r, c + 1].HasOrangePiece() && gridSwipeManager.slots[r, c + 1].GetOrangeSlice().id == 2)
-                    {
-                        if (IsValid(r + 1, c) && gridSwipeManager.slots[r + 1, c].HasOrangePiece() && gridSwipeManager.slots[r + 1, c].GetOrangeSlice().id == 3)
-                        {
-                            return true;
-                        }
-                    }
-                }
-                else if (currentSlice.id == 2)
-                {
-                    if (IsValid(r, c - 1) && gridSwipeManager.slots[r, c - 1].HasOrangePiece() && gridSwipeManager.slots[r, c + 1].GetOrangeSlice().id == 1)
-                    {
-                        if (IsValid(r + 1, c) && gridSwipeManager.slots[r + 1, c].HasOrangePiece() && gridSwipeManager.slots[r + 1, c].GetOrangeSlice().id == 4)
-                        {
-                            return true;
-                        }
-                    }
-                }
-                else if (currentSlice.id == 3)
-                {
-                    if (IsValid(r, c + 1) && gridSwipeManager.slots[r, c + 1].HasOrangePiece() && gridSwipeManager.slots[r, c + 1].GetOrangeSlice().id == 4)
-                    {
-                        if (IsValid(r - 1, c) && gridSwipeManager.slots[r - 1, c].HasOrangePiece() && gridSwipeManager.slots[r - 1, c].GetOrangeSlice().id == 1)
-                        {
-                            return true;
-                        }
-                    }
-                }
-                else if (currentSlice.id == 4)
-                {
-                    if (IsValid(r, c - 1) && gridSwipeManager.slots[r, c - 1].HasOrangePiece() && gridSwipeManager.slots[r, c - 1].GetOrangeSlice().id == 4)
-                    {
-                        if (IsValid(r - 1, c) && gridSwipeManager.slots[r - 1, c].HasOrangePiece() && gridSwipeManager.slots[r - 1, c].GetOrangeSlice().id == 2)
-                        {
-                            return true;
-                        }
-                    }
+                    return true;
                 }
             }
         }
         return false;
-    }
-    private bool IsValid(int row, int col)
-    {
-        return row >= 0 && row < gridSwipeManager.rows && col >= 0 && col < gridSwipeManager.columns;
     }
 }
