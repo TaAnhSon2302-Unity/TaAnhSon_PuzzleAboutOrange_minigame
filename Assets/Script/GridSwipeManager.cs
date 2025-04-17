@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -10,37 +11,48 @@ public class GridSwipeManager : MonoBehaviour, IPointerDownHandler, IPointerUpHa
 
     public static GridSwipeManager Instance;
 
-    [SerializeField] int rows = 4, columns = 4;
-    [SerializeField] GameObject holderLocation;
-    private Vector2 startTouch;
-    private Vector2 endTouch;
+    [SerializeField] public int rows = 4;
+    [SerializeField] public int columns = 4;
     public float swipeThreshold = 30f;
 
+    private Vector2 startTouch;
+    private Vector2 endTouch;
+
     public GridSlot[,] slots;
+
+    public CheckWinCondition checkWinCondition;
     private void Awake()
     {
         Instance = this;
         slots = new GridSlot[rows, columns];
-    }
-    public void RegisterSlot(int row, int col, GridSlot slot)
-    {
-        slots[row, col] = slot;
+        checkWinCondition = gameObject.GetComponent<CheckWinCondition>();
     }
 
-    void IPointerDownHandler.OnPointerDown(PointerEventData eventData)
+    public void RegisterSlot(int row, int col, GridSlot slot)
+    {
+        if (IsValid(row, col))
+        {
+            slots[row, col] = slot;
+        }
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
     {
         startTouch = eventData.position;
     }
 
-    void IPointerUpHandler.OnPointerUp(PointerEventData eventData)
+    public void OnPointerUp(PointerEventData eventData)
     {
         endTouch = eventData.position;
-        DectectSwipe();
+        DetectSwipe();
+        Debug.Log(checkWinCondition.CheckWinningCodition());
     }
-    void DectectSwipe()
+
+    private void DetectSwipe()
     {
         Vector2 delta = endTouch - startTouch;
         if (delta.magnitude < swipeThreshold) return;
+
         Vector2 dir = delta.normalized;
 
         if (Mathf.Abs(dir.x) > Mathf.Abs(dir.y))
@@ -58,45 +70,62 @@ public class GridSwipeManager : MonoBehaviour, IPointerDownHandler, IPointerUpHa
                 MoveAll(Vector2Int.up);
         }
     }
-    void MoveAll(Vector2Int direction)
+
+    private void MoveAll(Vector2Int direction)
     {
-        bool moved = false;
         List<Vector2Int> positions = new List<Vector2Int>();
+
         for (int r = 0; r < rows; r++)
-        {
             for (int c = 0; c < columns; c++)
-            {
                 positions.Add(new Vector2Int(r, c));
-            }
-        }
         if (direction == Vector2Int.right)
             positions.Sort((a, b) => b.y.CompareTo(a.y));
         else if (direction == Vector2Int.left)
             positions.Sort((a, b) => a.y.CompareTo(b.y));
         else if (direction == Vector2Int.down)
-            positions.Sort((a, b) => b.x.CompareTo(a.x));
-        else if (direction == Vector2Int.up)
             positions.Sort((a, b) => a.x.CompareTo(b.x));
+        else if (direction == Vector2Int.up)
+            positions.Sort((a, b) => b.x.CompareTo(a.x));
+
+        bool[,] occupied = new bool[rows, columns];
+        List<(GridSlot from, GridSlot to)> moves = new List<(GridSlot, GridSlot)>();
+
+
+        for (int r = 0; r < rows; r++)
+            for (int c = 0; c < columns; c++)
+                if (slots[r, c] != null && slots[r, c].HasOrangePiece())
+                    occupied[r, c] = true;
 
         foreach (var pos in positions)
         {
             GridSlot current = slots[pos.x, pos.y];
-            if (current.HasOrangePiece())
-            {
-                int newRow = current.x + direction.y;
-                int newCol = current.y + direction.x;
+            if (current == null || !current.HasOrangePiece()) continue;
 
-                if (IsValid(newRow, newCol) && !slots[newRow, newCol].HasOrangePiece())
+            int newRow = current.x + direction.y;
+            int newCol = current.y + direction.x;
+
+
+            if (IsValid(newRow, newCol))
+            {
+                GridSlot target = slots[newRow, newCol];
+
+                if (target != null && !occupied[newRow, newCol])
                 {
-                    GridSlot next = slots[newRow, newCol];
-                    current.MovePieceTo(next);
-                    moved = true;
+                    occupied[newRow, newCol] = true;
+                    occupied[current.x, current.y] = false;
+                    moves.Add((current, target));
                 }
             }
         }
+
+        foreach (var move in moves)
+        {
+            move.from.MovePieceTo(move.to);
+        }
     }
-    bool IsValid(int row, int col)
+
+    private bool IsValid(int row, int col)
     {
-        return row >= 0 && row < PlayScreenManager.Instance.rows && col >= 0 && col < PlayScreenManager.Instance.colloumns;
+        return row >= 0 && row < rows && col >= 0 && col < columns;
     }
 }
