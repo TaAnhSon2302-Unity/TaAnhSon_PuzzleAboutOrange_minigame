@@ -9,7 +9,7 @@ public class GridSlot : MonoBehaviour
     public int y;
     [SerializeField] OrangeSlice orangePiece;
     [SerializeField] GameObject block;
-    private void Start()
+    void Start()
     {
         if (orangePiece == null)
         {
