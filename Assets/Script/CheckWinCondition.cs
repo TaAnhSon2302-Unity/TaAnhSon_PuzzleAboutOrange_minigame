@@ -47,6 +47,7 @@ public class CheckWinCondition : MonoBehaviour
                 // Kiểm tra xem 4 mảnh có đúng vị trí không
                 if (id1 == 1 && id2 == 2 && id3 == 3 && id4 == 4)
                 {
+                    StopAllCoroutines();
                     return true;
                 }
             }
