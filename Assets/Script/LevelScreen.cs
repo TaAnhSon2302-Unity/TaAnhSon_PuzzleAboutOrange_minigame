@@ -22,7 +22,7 @@ public class LevelScreen : MonoBehaviour
     }
     public void GenerateLevel()
     {
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < gridFrame.Count; i++)
         {
             Level level = Instantiate(levelPrefab, LeelHolder.transform);
             level.levelIndex = i;
